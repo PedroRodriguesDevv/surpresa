@@ -1,0 +1,339 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<!-- META VIEWPORT: ESSENCIAL PARA CELULAR -->
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Uma surpresa...</title>
+<style>
+    /* Evita rolagem e seleção de texto no celular */
+    * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+    body { margin: 0; overflow: hidden; background-color: #020005; font-family: 'Courier New', Courier, monospace; touch-action: none; }
+    
+    #msg {
+        position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);
+        color: #ff1a66; font-size: 1rem; text-shadow: 0 0 15px #ff1a66;
+        opacity: 1; transition: opacity 0.5s; pointer-events: none; z-index: 10;
+        text-align: center; letter-spacing: 2px; width: 90%; padding: 0 20px;
+    }
+    
+    .grid-bg {
+        position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+        background-image: 
+            linear-gradient(rgba(255, 26, 102, 0.1) 1px, transparent 1px),
+            linear-gradient(90deg, rgba(255, 26, 102, 0.1) 1px, transparent 1px);
+        background-size: 40px 40px; perspective: 500px; z-index: -1; opacity: 0.5;
+        animation: moveGrid 10s linear infinite; transition: opacity 3s ease-in-out;
+    }
+    @keyframes moveGrid {
+        0% { background-position: 0 0; }
+        100% { background-position: 0 40px; }
+    }
+
+    #btn-final {
+        position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);
+        background: rgba(0, 0, 0, 0.8); border: 2px solid #ff1a66; color: #ff1a66;
+        padding: 15px 30px; font-size: 1.2rem; font-weight: bold; letter-spacing: 2px;
+        text-transform: uppercase; cursor: pointer; border-radius: 8px;
+        box-shadow: 0 0 20px #ff1a66, inset 0 0 15px #ff1a66;
+        opacity: 0; pointer-events: none; transition: all 1s ease-in-out; z-index: 20;
+        text-shadow: 0 0 10px #ff1a66; font-family: 'Courier New', Courier, monospace;
+    }
+    #btn-final.show { opacity: 1; pointer-events: auto; animation: pulseButton 2s infinite; }
+    #btn-final:active { background: #ff1a66; color: #000; transform: translate(-50%, -50%) scale(0.95); }
+    @keyframes pulseButton {
+        0% { box-shadow: 0 0 20px #ff1a66, inset 0 0 15px #ff1a66; }
+        50% { box-shadow: 0 0 40px #ff1a66, inset 0 0 25px #ff1a66; }
+        100% { box-shadow: 0 0 20px #ff1a66, inset 0 0 15px #ff1a66; }
+    }
+
+    #msg-final {
+        position: absolute; top: 50%; left: 50%; transform: translate(-50%, -40%);
+        color: #f0f0f0; font-size: 1.2rem; letter-spacing: 3px; text-align: center;
+        text-shadow: 0 0 8px rgba(255, 26, 102, 0.5), 0 0 15px rgba(255, 26, 102, 0.3);
+        opacity: 0; pointer-events: none; z-index: 30; padding: 0 20px;
+        font-family: 'Georgia', serif; font-style: italic; width: 100%; line-height: 1.6;
+        transition: opacity 2s ease-in-out, transform 2s ease-in-out;
+    }
+    #msg-final.show { opacity: 1; transform: translate(-50%, -50%); }
+    
+    .cursor {
+        display: inline-block; width: 2px; height: 1.2em;
+        background-color: #ff1a66; margin-left: 5px; vertical-align: text-bottom;
+        animation: blinkCursor 1s step-end infinite;
+    }
+    @keyframes blinkCursor { 0%, 100% { opacity: 1; } 50% { opacity: 0; } }
+
+    /* ESTRELAS DO TOUCH TRAIL */
+    .star-trail {
+        position: absolute; width: 6px; height: 6px;
+        background-color: #ff1a66; border-radius: 50%;
+        pointer-events: none; z-index: 5;
+        box-shadow: 0 0 10px #ff1a66, 0 0 20px #ff1a66;
+        animation: fadeOutStar 1s linear forwards;
+    }
+    @keyframes fadeOutStar {
+        0% { opacity: 1; transform: scale(1) translateY(0); }
+        100% { opacity: 0; transform: scale(0) translateY(20px); }
+    }
+
+    /* Ajustes finos para celulares muito pequenos */
+    @media (max-width: 400px) {
+        #msg { font-size: 0.85rem; }
+        #btn-final { font-size: 1rem; padding: 12px 20px; }
+        #msg-final { font-size: 1.1rem; }
+    }
+</style>
+</head>
+<body>
+<div class="grid-bg"></div>
+<div id="msg">TOQUE NA TELA PARA INICIAR A METAMORFOSE</div>
+
+<button id="btn-final">CLIQUE AQUI</button>
+
+<div id="msg-final"><span id="typing-text"></span><span class="cursor" id="cursor"></span></div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+
+<script>
+const scene = new THREE.Scene();
+scene.fog = new THREE.FogExp2(0x020005, 0.002);
+
+const camera = new THREE.PerspectiveCamera(75, window.innerWidth/window.innerHeight, 0.1, 1000);
+// Ajuste para celular: se a tela for vertical, a câmera fica mais longe para caber tudo
+camera.position.z = window.innerWidth < window.innerHeight ? 65 : 50;
+
+const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+renderer.setSize(window.innerWidth, window.innerHeight);
+renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2)); // Otimização para celular
+document.body.appendChild(renderer.domElement);
+
+const idiomas = [
+    "Eu te amo", "I love you", "Te amo", "Je t'aime", "Ti amo", 
+    "Ich liebe dich", "愛してる", "我爱你", "사랑해", "Я тебя люблю", 
+    "أحبك", "मैं तुमसे प्यार करता हूँ", "Σ' αγαπώ", "אני אוהב אותך"
+];
+
+function getHeartPoint(t, r) {
+    const x = 16 * Math.pow(Math.sin(t), 3);
+    const y = -(13 * Math.cos(t) - 5 * Math.cos(2*t) - 2 * Math.cos(3*t) - Math.cos(4*t));
+    const z = (Math.random() - 0.5) * 5 * Math.sqrt(1 - r*r); 
+    return { x: x * r, y: -y * r, z: z }; 
+}
+
+const canvas2d = document.createElement('canvas');
+canvas2d.width = 600; canvas2d.height = 300; 
+const ctx = canvas2d.getContext('2d');
+
+const allWordPoints = [];
+idiomas.forEach((texto) => {
+    ctx.clearRect(0, 0, canvas2d.width, canvas2d.height);
+    ctx.fillStyle = 'white';
+    ctx.font = 'bold 50px "Courier New", monospace'; 
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillText(texto, canvas2d.width/2, canvas2d.height/2);
+
+    const imageData = ctx.getImageData(0, 0, canvas2d.width, canvas2d.height).data;
+    for (let y = 0; y < canvas2d.height; y+=3) {
+        for (let x = 0; x < canvas2d.width; x+=3) {
+            if (imageData[(y * canvas2d.width + x) * 4 + 3] > 128) {
+                allWordPoints.push({
+                    x: (x - canvas2d.width/2) * 0.15,
+                    y: -(y - canvas2d.height/2) * 0.15, 
+                    z: (Math.random() - 0.5) * 80
+                });
+            }
+        }
+    }
+});
+
+const NUM_PARTICLES = allWordPoints.length;
+const particles = [];
+const geometry = new THREE.BufferGeometry();
+const positions = new Float32Array(NUM_PARTICLES * 3);
+const colors = new Float32Array(NUM_PARTICLES * 3);
+
+for (let i = 0; i < NUM_PARTICLES; i++) {
+    const t = Math.random() * Math.PI * 2;
+    const r = Math.pow(Math.random(), 0.5); 
+    const hp = getHeartPoint(t, r);
+    const target = { x: hp.x, y: hp.y, z: hp.z };
+    const start = allWordPoints[i];
+
+    particles.push({ start: start, target: target, speedOffset: Math.random() * 0.6 });
+
+    if (Math.random() > 0.9) {
+        colors[i*3] = 0.0; colors[i*3+1] = 1.0; colors[i*3+2] = 1.0;
+    } else if (Math.random() > 0.5) {
+        colors[i*3] = 1.0; colors[i*3+1] = 0.1; colors[i*3+2] = 0.6;
+    } else {
+        colors[i*3] = 1.0; colors[i*3+1] = 0.0; colors[i*3+2] = 0.2;
+    }
+}
+
+geometry.setAttribute('position', new THREE.BufferAttribute(positions, 3));
+geometry.setAttribute('color', new THREE.BufferAttribute(colors, 3));
+
+const material = new THREE.PointsMaterial({
+    size: window.innerWidth < 768 ? 0.35 : 0.25, // Partículas um pouco maiores no celular
+    vertexColors: true, blending: THREE.AdditiveBlending, 
+    transparent: true, opacity: 0.9, sizeAttenuation: true
+});
+
+const particlesMesh = new THREE.Points(geometry, material);
+scene.add(particlesMesh);
+
+let isFormingHeart = false;
+let startTime = 0;
+let botaoMostrado = false;
+let etapa2Ativada = false;
+
+// EVENTO DE TOQUE NA TELA (Para iniciar)
+document.addEventListener('touchstart', function() {
+    if (!isFormingHeart) {
+        isFormingHeart = true;
+        startTime = performance.now();
+        document.getElementById('msg').style.opacity = 0;
+    }
+}, { passive: true });
+
+// Fallback para computador
+document.addEventListener('mousedown', function() {
+    if (!isFormingHeart) {
+        isFormingHeart = true;
+        startTime = performance.now();
+        document.getElementById('msg').style.opacity = 0;
+    }
+});
+
+// CLIQUE NO BOTÃO FINAL
+document.getElementById('btn-final').addEventListener('click', function() {
+    etapa2Ativada = true;
+    this.style.opacity = 0;
+    this.style.pointerEvents = 'none';
+    document.querySelector('.grid-bg').style.opacity = 0.05;
+    material.opacity = 0.15;
+    
+    setTimeout(() => {
+        const msgFinal = document.getElementById('msg-final');
+        msgFinal.classList.add('show');
+        
+        const texto = "Saudades do que\nainda não tivemos...";
+        const elementoTexto = document.getElementById('typing-text');
+        const cursor = document.getElementById('cursor');
+        let i = 0;
+        elementoTexto.innerHTML = "";
+        
+        function digitar() {
+            if (i < texto.length) {
+                if (texto.charAt(i) === '\n') {
+                    elementoTexto.innerHTML += '<br>';
+                } else {
+                    elementoTexto.innerHTML += texto.charAt(i);
+                }
+                i++;
+                setTimeout(digitar, 100);
+            } else {
+                setTimeout(() => { cursor.style.display = 'none'; }, 2000);
+            }
+        }
+        setTimeout(digitar, 1000);
+    }, 500); 
+});
+
+// EFEITO DE RASTRO (Funciona no Touch e no Mouse)
+let lastTrailTime = 0;
+function createStar(x, y) {
+    if (!etapa2Ativada) return;
+    const now = Date.now();
+    if (now - lastTrailTime > 40) { 
+        lastTrailTime = now;
+        const star = document.createElement('div');
+        star.className = 'star-trail';
+        star.style.left = (x - 3) + 'px';
+        star.style.top = (y - 3) + 'px';
+        document.body.appendChild(star);
+        setTimeout(() => { star.remove(); }, 1000);
+    }
+}
+
+document.addEventListener('touchmove', (e) => {
+    const touch = e.touches[0];
+    createStar(touch.clientX, touch.clientY);
+}, { passive: true });
+
+document.addEventListener('mousemove', (e) => {
+    createStar(e.clientX, e.clientY);
+});
+
+let time = 0;
+function animate() {
+    requestAnimationFrame(animate);
+    time += 0.01;
+
+    let timeSinceClick = isFormingHeart ? (performance.now() - startTime) / 1000 : 0;
+    let baseProgress = 0;
+    if (timeSinceClick > 0.2) {
+        baseProgress = Math.min(1, (timeSinceClick - 0.2) / 12);
+    }
+
+    if (baseProgress >= 1 && !botaoMostrado) {
+        botaoMostrado = true;
+        document.getElementById('btn-final').classList.add('show');
+    }
+
+    const pulse = baseProgress >= 1 ? (1 + Math.sin(time * 4) * 0.02 + Math.exp(-Math.pow((time % Math.PI - 1.5) / 0.3, 2)) * 0.12) : 1;
+    const posAttr = geometry.attributes.position;
+
+    for (let i = 0; i < NUM_PARTICLES; i++) {
+        const p = particles[i];
+        let individualProgress = (baseProgress - p.speedOffset) / (1 - p.speedOffset);
+        individualProgress = Math.max(0, Math.min(1, individualProgress));
+        const ease = 1 - Math.pow(1 - individualProgress, 3);
+
+        let currentX = p.start.x * (1 - ease) + p.target.x * ease;
+        let currentY = p.start.y * (1 - ease) + p.target.y * ease;
+        let currentZ = p.start.z * (1 - ease) + p.target.z * ease;
+
+        const angle = time * (1 - individualProgress) * 3;
+        const cosA = Math.cos(angle);
+        const sinA = Math.sin(angle);
+        
+        let finalX = currentX * cosA - currentY * sinA;
+        let finalY = currentX * sinA + currentY * cosA;
+
+        if (baseProgress >= 1) {
+            finalX *= pulse;
+            finalY *= pulse;
+            posAttr.setXYZ(i, finalX, finalY, currentZ * pulse);
+        } else {
+            posAttr.setXYZ(i, finalX, finalY, currentZ);
+        }
+    }
+    posAttr.needsUpdate = true;
+
+    if (etapa2Ativada) {
+        // Câmera se afasta bem devagar
+        let targetZ = window.innerWidth < window.innerHeight ? 85 : 75;
+        camera.position.z += (targetZ - camera.position.z) * 0.01;
+        particlesMesh.rotation.y += 0.0005;
+    } else {
+        camera.position.x = Math.sin(time * 0.5) * 5;
+        particlesMesh.rotation.y = Math.sin(time * 0.2) * 0.1;
+    }
+    
+    camera.lookAt(scene.position);
+    renderer.render(scene, camera);
+}
+
+animate();
+
+window.addEventListener('resize', () => {
+    camera.aspect = window.innerWidth / window.innerHeight;
+    camera.updateProjectionMatrix();
+    renderer.setSize(window.innerWidth, window.innerHeight);
+});
+</script>
+</body>
+</html>
