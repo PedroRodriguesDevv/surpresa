@@ -15,10 +15,12 @@
     #msg {
         position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);
         color: #ff1a66; font-size: 1.1rem; text-shadow: 0 0 15px #ff1a66, 0 0 30px #ff1a66;
-        opacity: 1; transition: opacity 0.8s; pointer-events: none; z-index: 99999;
+        opacity: 1; transition: opacity 0.5s ease-out; pointer-events: none; z-index: 99999;
         text-align: center; letter-spacing: 2px; width: 90%; padding: 0 20px;
         font-weight: bold; animation: pulseMsg 2s infinite;
     }
+    /* Classe que força o texto a sumir */
+    #msg.hidden { opacity: 0 !important; }
     @keyframes pulseMsg { 0%, 100% { opacity: 0.7; } 50% { opacity: 1; } }
     
     #btn-final {
@@ -69,14 +71,11 @@
 
     .notif {
         background: rgba(30, 30, 30, 0.95);
-        border-left: 4px solid #25D366; /* Verde WhatsApp */
-        border-radius: 10px;
-        padding: 12px 15px;
-        box-shadow: 0 5px 15px rgba(0,0,0,0.5);
-        color: white;
+        border-left: 4px solid #25D366;
+        border-radius: 10px; padding: 12px 15px;
+        box-shadow: 0 5px 15px rgba(0,0,0,0.5); color: white;
         display: flex; flex-direction: column;
-        transform: translateY(-50px) scale(0.8);
-        opacity: 0;
+        transform: translateY(-50px) scale(0.8); opacity: 0;
         animation: slideIn 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards, fadeOut 0.5s ease-in 4s forwards;
         backdrop-filter: blur(5px);
     }
@@ -98,16 +97,11 @@
     }
 
     .notif-body {
-        font-size: 0.95rem; font-family: 'Helvetica', Arial, sans-serif;
-        color: #eee;
+        font-size: 0.95rem; font-family: 'Helvetica', Arial, sans-serif; color: #eee;
     }
 
-    @keyframes slideIn {
-        to { transform: translateY(0) scale(1); opacity: 1; }
-    }
-    @keyframes fadeOut {
-        to { opacity: 0; transform: scale(0.9); }
-    }
+    @keyframes slideIn { to { transform: translateY(0) scale(1); opacity: 1; } }
+    @keyframes fadeOut { to { opacity: 0; transform: scale(0.9); } }
 
     @media (max-width: 400px) {
         #msg { font-size: 0.9rem; }
@@ -124,14 +118,12 @@
     <div id="msg-final"><span id="typing-text"></span><span class="cursor" id="cursor"></span></div>
 </div>
 
-<!-- Onde as notificações vão aparecer -->
 <div id="notifications-container"></div>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
 
 <script>
 const scene = new THREE.Scene();
-// Fundo nebular escuro
 scene.fog = new THREE.FogExp2(0x050002, 0.002);
 
 const camera = new THREE.PerspectiveCamera(75, window.innerWidth/window.innerHeight, 0.1, 1000);
@@ -142,13 +134,13 @@ renderer.setSize(window.innerWidth, window.innerHeight);
 renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
 document.body.appendChild(renderer.domElement);
 
-// --- 1. NEBULOSA DE FUNDO (Partículas flutuantes) ---
+// --- 1. NEBULOSA DE FUNDO ---
 const bgGeometry = new THREE.BufferGeometry();
 const bgPositions = new Float32Array(500 * 3);
 for(let i=0; i<500; i++){
     bgPositions[i*3] = (Math.random() - 0.5) * 200;
     bgPositions[i*3+1] = (Math.random() - 0.5) * 200;
-    bgPositions[i*3+2] = (Math.random() - 0.5) * 200 - 50; // Fica mais atrás
+    bgPositions[i*3+2] = (Math.random() - 0.5) * 200 - 50;
 }
 bgGeometry.setAttribute('position', new THREE.BufferAttribute(bgPositions, 3));
 const bgMaterial = new THREE.PointsMaterial({
@@ -214,11 +206,11 @@ for (let i = 0; i < NUM_PARTICLES; i++) {
     particles.push({ start: start, target: target, speedOffset: Math.random() * 0.6 });
 
     if (Math.random() > 0.9) {
-        colors[i*3] = 0.0; colors[i*3+1] = 1.0; colors[i*3+2] = 1.0; // Ciano
+        colors[i*3] = 0.0; colors[i*3+1] = 1.0; colors[i*3+2] = 1.0;
     } else if (Math.random() > 0.5) {
-        colors[i*3] = 1.0; colors[i*3+1] = 0.1; colors[i*3+2] = 0.6; // Magenta
+        colors[i*3] = 1.0; colors[i*3+1] = 0.1; colors[i*3+2] = 0.6;
     } else {
-        colors[i*3] = 1.0; colors[i*3+1] = 0.0; colors[i*3+2] = 0.2; // Vermelho
+        colors[i*3] = 1.0; colors[i*3+1] = 0.0; colors[i*3+2] = 0.2;
     }
 }
 
@@ -227,13 +219,9 @@ geometry.setAttribute('color', new THREE.BufferAttribute(colors, 3));
 
 const material = new THREE.PointsMaterial({
     size: window.innerWidth < 768 ? 0.35 : 0.25, 
-    vertexColors: true, 
-    blending: THREE.AdditiveBlending, 
-    transparent: true, 
-    opacity: 0.8, 
-    sizeAttenuation: true,
-    depthWrite: false, 
-    alphaTest: 0.01
+    vertexColors: true, blending: THREE.AdditiveBlending, 
+    transparent: true, opacity: 0.8, sizeAttenuation: true,
+    depthWrite: false, alphaTest: 0.01
 });
 
 const particlesMesh = new THREE.Points(geometry, material);
@@ -244,11 +232,18 @@ let startTime = 0;
 let botaoMostrado = false;
 let etapa2Ativada = false;
 
+// FUNÇÃO QUE ESCONDE O TEXTO DEFINITIVAMENTE
+function esconderTextoInicial() {
+    const msgEl = document.getElementById('msg');
+    msgEl.classList.add('hidden');
+    setTimeout(() => { msgEl.style.display = 'none'; }, 600);
+}
+
 document.addEventListener('touchstart', function() {
     if (!isFormingHeart) {
         isFormingHeart = true;
         startTime = performance.now();
-        document.getElementById('msg').style.opacity = 0;
+        esconderTextoInicial();
     }
 }, { passive: true });
 
@@ -256,11 +251,11 @@ document.addEventListener('mousedown', function() {
     if (!isFormingHeart) {
         isFormingHeart = true;
         startTime = performance.now();
-        document.getElementById('msg').style.opacity = 0;
+        esconderTextoInicial();
     }
 });
 
-// --- 3. TEXTOS E TURBILHÃO DE NOTIFICAÇÕES ---
+// --- 3. TEXTOS E TURBILHÃO ---
 const mensagensAmor = [
     "Oi, meu amor...", "Você é tudo pra mim", "Tô com saudade", "Linda demais", 
     "Gostosa 😈", "Pensa em mim?", "Te amo infinito", "Meu bem", 
@@ -272,7 +267,6 @@ let notifInterval;
 let audioContext;
 
 function tocarSomNotificacao() {
-    // Tenta criar um som de notificação real via Web Audio API
     if (!audioContext) audioContext = new (window.AudioContext || window.webkitAudioContext)();
     if (audioContext.state === 'suspended') audioContext.resume();
     
@@ -294,13 +288,8 @@ function criarNotificacao() {
     const notif = document.createElement('div');
     notif.className = 'notif';
     
-    // Sorteia uma mensagem
     const mensagem = mensagensAmor[Math.floor(Math.random() * mensagensAmor.length)];
-    
-    // Escolhe se é do Pedro
     const remetente = "Pedro ❤️";
-
-    // Pega hora atual
     const agora = new Date();
     const hora = agora.getHours().toString().padStart(2, '0') + ':' + agora.getMinutes().toString().padStart(2, '0');
 
@@ -313,11 +302,7 @@ function criarNotificacao() {
     `;
     
     container.appendChild(notif);
-    
-    // Toca o som
     tocarSomNotificacao();
-
-    // Remove após 4.5s
     setTimeout(() => { notif.remove(); }, 4500);
 }
 
@@ -326,7 +311,6 @@ document.getElementById('btn-final').addEventListener('click', function() {
     this.style.opacity = 0;
     this.style.pointerEvents = 'none';
     
-    // Escurece o fundo para focar nas mensagens
     scene.fog = new THREE.FogExp2(0x050002, 0.005); 
     material.opacity = 0.2;
     bgMaterial.opacity = 0.05;
@@ -351,17 +335,11 @@ document.getElementById('btn-final').addEventListener('click', function() {
                 i++;
                 setTimeout(digitar, 100);
             } else {
-                // QUANDO ACABA DE DIGITAR, COMEÇA O TURBILHÃO
                 setTimeout(() => { 
                     cursor.style.display = 'none'; 
-                    
-                    // Inicia a explosão de notificações
                     criarNotificacao();
-                    notifInterval = setInterval(criarNotificacao, 400); // Nova mensagem a cada 0.4s
-                    
-                    // Para de criar após 12 segundos (30 mensagens aprox)
+                    notifInterval = setInterval(criarNotificacao, 400); 
                     setTimeout(() => { clearInterval(notifInterval); }, 12000);
-                    
                 }, 1500);
             }
         }
@@ -374,7 +352,6 @@ function animate() {
     requestAnimationFrame(animate);
     time += 0.01;
 
-    // Movimento das estrelas de fundo
     bgStars.rotation.y += 0.0005;
     bgStars.rotation.x += 0.0002;
 
