@@ -2,27 +2,28 @@
 <html lang="pt-BR">
 <head>
 <meta charset="UTF-8">
-<!-- META VIEWPORT: ESSENCIAL PARA CELULAR -->
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <title>Uma surpresa...</title>
 <style>
-    /* Evita rolagem e seleção de texto no celular */
     * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
     body { margin: 0; overflow: hidden; background-color: #020005; font-family: 'Courier New', Courier, monospace; touch-action: none; }
     
+    /* Texto inicial - Agora com z-index altíssimo para ficar na frente */
     #msg {
         position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);
-        color: #ff1a66; font-size: 1rem; text-shadow: 0 0 15px #ff1a66;
-        opacity: 1; transition: opacity 0.5s; pointer-events: none; z-index: 10;
+        color: #ff1a66; font-size: 1rem; text-shadow: 0 0 15px #ff1a66, 0 0 30px #ff1a66;
+        opacity: 1; transition: opacity 0.8s; pointer-events: none; z-index: 99999;
         text-align: center; letter-spacing: 2px; width: 90%; padding: 0 20px;
+        background: rgba(0,0,0,0.4); border-radius: 10px; padding: 15px;
     }
     
     .grid-bg {
         position: absolute; top: 0; left: 0; width: 100%; height: 100%;
         background-image: 
-            linear-gradient(rgba(255, 26, 102, 0.1) 1px, transparent 1px),
-            linear-gradient(90deg, rgba(255, 26, 102, 0.1) 1px, transparent 1px);
-        background-size: 40px 40px; perspective: 500px; z-index: -1; opacity: 0.5;
+            linear-gradient(rgba(255, 26, 102, 0.2) 1px, transparent 1px),
+            linear-gradient(90deg, rgba(255, 26, 102, 0.2) 1px, transparent 1px);
+        background-size: 40px 40px; perspective: 500px; z-index: 0; /* Grid no fundo */
+        opacity: 0.6;
         animation: moveGrid 10s linear infinite; transition: opacity 3s ease-in-out;
     }
     @keyframes moveGrid {
@@ -30,13 +31,16 @@
         100% { background-position: 0 40px; }
     }
 
+    /* Canvas do Three.js fica no meio */
+    canvas { position: absolute; top: 0; left: 0; z-index: 1; }
+
     #btn-final {
         position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);
         background: rgba(0, 0, 0, 0.8); border: 2px solid #ff1a66; color: #ff1a66;
         padding: 15px 30px; font-size: 1.2rem; font-weight: bold; letter-spacing: 2px;
         text-transform: uppercase; cursor: pointer; border-radius: 8px;
         box-shadow: 0 0 20px #ff1a66, inset 0 0 15px #ff1a66;
-        opacity: 0; pointer-events: none; transition: all 1s ease-in-out; z-index: 20;
+        opacity: 0; pointer-events: none; transition: all 1s ease-in-out; z-index: 99999;
         text-shadow: 0 0 10px #ff1a66; font-family: 'Courier New', Courier, monospace;
     }
     #btn-final.show { opacity: 1; pointer-events: auto; animation: pulseButton 2s infinite; }
@@ -47,15 +51,20 @@
         100% { box-shadow: 0 0 20px #ff1a66, inset 0 0 15px #ff1a66; }
     }
 
+    #container-final {
+        position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);
+        display: flex; flex-direction: column; align-items: center; justify-content: center;
+        width: 100%; padding: 0 20px; opacity: 0; pointer-events: none; z-index: 99999;
+        transition: opacity 2s ease-in-out;
+    }
+    #container-final.show { opacity: 1; }
+
     #msg-final {
-        position: absolute; top: 50%; left: 50%; transform: translate(-50%, -40%);
         color: #f0f0f0; font-size: 1.2rem; letter-spacing: 3px; text-align: center;
         text-shadow: 0 0 8px rgba(255, 26, 102, 0.5), 0 0 15px rgba(255, 26, 102, 0.3);
-        opacity: 0; pointer-events: none; z-index: 30; padding: 0 20px;
-        font-family: 'Georgia', serif; font-style: italic; width: 100%; line-height: 1.6;
-        transition: opacity 2s ease-in-out, transform 2s ease-in-out;
+        font-family: 'Georgia', serif; font-style: italic; line-height: 1.6;
+        margin-bottom: 20px;
     }
-    #msg-final.show { opacity: 1; transform: translate(-50%, -50%); }
     
     .cursor {
         display: inline-block; width: 2px; height: 1.2em;
@@ -64,11 +73,10 @@
     }
     @keyframes blinkCursor { 0%, 100% { opacity: 1; } 50% { opacity: 0; } }
 
-    /* ESTRELAS DO TOUCH TRAIL */
     .star-trail {
         position: absolute; width: 6px; height: 6px;
         background-color: #ff1a66; border-radius: 50%;
-        pointer-events: none; z-index: 5;
+        pointer-events: none; z-index: 9999;
         box-shadow: 0 0 10px #ff1a66, 0 0 20px #ff1a66;
         animation: fadeOutStar 1s linear forwards;
     }
@@ -77,7 +85,6 @@
         100% { opacity: 0; transform: scale(0) translateY(20px); }
     }
 
-    /* Ajustes finos para celulares muito pequenos */
     @media (max-width: 400px) {
         #msg { font-size: 0.85rem; }
         #btn-final { font-size: 1rem; padding: 12px 20px; }
@@ -91,21 +98,21 @@
 
 <button id="btn-final">CLIQUE AQUI</button>
 
-<div id="msg-final"><span id="typing-text"></span><span class="cursor" id="cursor"></span></div>
+<div id="container-final">
+    <div id="msg-final"><span id="typing-text"></span><span class="cursor" id="cursor"></span></div>
+</div>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
 
 <script>
 const scene = new THREE.Scene();
 scene.fog = new THREE.FogExp2(0x020005, 0.002);
-
 const camera = new THREE.PerspectiveCamera(75, window.innerWidth/window.innerHeight, 0.1, 1000);
-// Ajuste para celular: se a tela for vertical, a câmera fica mais longe para caber tudo
 camera.position.z = window.innerWidth < window.innerHeight ? 65 : 50;
 
 const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
 renderer.setSize(window.innerWidth, window.innerHeight);
-renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2)); // Otimização para celular
+renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
 document.body.appendChild(renderer.domElement);
 
 const idiomas = [
@@ -175,10 +182,16 @@ for (let i = 0; i < NUM_PARTICLES; i++) {
 geometry.setAttribute('position', new THREE.BufferAttribute(positions, 3));
 geometry.setAttribute('color', new THREE.BufferAttribute(colors, 3));
 
+// CORREÇÃO DO BUG VISUAL: Adicionando blending normal, depthWrite false e alphaTest
 const material = new THREE.PointsMaterial({
-    size: window.innerWidth < 768 ? 0.35 : 0.25, // Partículas um pouco maiores no celular
-    vertexColors: true, blending: THREE.AdditiveBlending, 
-    transparent: true, opacity: 0.9, sizeAttenuation: true
+    size: window.innerWidth < 768 ? 0.35 : 0.25, 
+    vertexColors: true, 
+    blending: THREE.AdditiveBlending, 
+    transparent: true, 
+    opacity: 0.8, 
+    sizeAttenuation: true,
+    depthWrite: false, // Resolve as linhas pretas no meio
+    alphaTest: 0.01
 });
 
 const particlesMesh = new THREE.Points(geometry, material);
@@ -189,7 +202,6 @@ let startTime = 0;
 let botaoMostrado = false;
 let etapa2Ativada = false;
 
-// EVENTO DE TOQUE NA TELA (Para iniciar)
 document.addEventListener('touchstart', function() {
     if (!isFormingHeart) {
         isFormingHeart = true;
@@ -198,7 +210,6 @@ document.addEventListener('touchstart', function() {
     }
 }, { passive: true });
 
-// Fallback para computador
 document.addEventListener('mousedown', function() {
     if (!isFormingHeart) {
         isFormingHeart = true;
@@ -207,7 +218,6 @@ document.addEventListener('mousedown', function() {
     }
 });
 
-// CLIQUE NO BOTÃO FINAL
 document.getElementById('btn-final').addEventListener('click', function() {
     etapa2Ativada = true;
     this.style.opacity = 0;
@@ -216,8 +226,8 @@ document.getElementById('btn-final').addEventListener('click', function() {
     material.opacity = 0.15;
     
     setTimeout(() => {
-        const msgFinal = document.getElementById('msg-final');
-        msgFinal.classList.add('show');
+        const containerFinal = document.getElementById('container-final');
+        containerFinal.classList.add('show');
         
         const texto = "Saudades do que\nainda não tivemos...";
         const elementoTexto = document.getElementById('typing-text');
@@ -242,7 +252,6 @@ document.getElementById('btn-final').addEventListener('click', function() {
     }, 500); 
 });
 
-// EFEITO DE RASTRO (Funciona no Touch e no Mouse)
 let lastTrailTime = 0;
 function createStar(x, y) {
     if (!etapa2Ativada) return;
@@ -257,15 +266,8 @@ function createStar(x, y) {
         setTimeout(() => { star.remove(); }, 1000);
     }
 }
-
-document.addEventListener('touchmove', (e) => {
-    const touch = e.touches[0];
-    createStar(touch.clientX, touch.clientY);
-}, { passive: true });
-
-document.addEventListener('mousemove', (e) => {
-    createStar(e.clientX, e.clientY);
-});
+document.addEventListener('touchmove', (e) => { createStar(e.touches[0].clientX, e.touches[0].clientY); }, { passive: true });
+document.addEventListener('mousemove', (e) => { createStar(e.clientX, e.clientY); });
 
 let time = 0;
 function animate() {
@@ -314,7 +316,6 @@ function animate() {
     posAttr.needsUpdate = true;
 
     if (etapa2Ativada) {
-        // Câmera se afasta bem devagar
         let targetZ = window.innerWidth < window.innerHeight ? 85 : 75;
         camera.position.z += (targetZ - camera.position.z) * 0.01;
         particlesMesh.rotation.y += 0.0005;
@@ -326,7 +327,6 @@ function animate() {
     camera.lookAt(scene.position);
     renderer.render(scene, camera);
 }
-
 animate();
 
 window.addEventListener('resize', () => {
